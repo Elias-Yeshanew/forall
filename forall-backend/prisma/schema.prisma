@@ -1,0 +1,213 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── USERS (staff only: admin + sales) ───────────────────────────────────────
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  phone        String?
+  role         UserRole @default(sales)
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  listings     Listing[]
+  conversations Conversation[] @relation("ClientConversations")
+  messages     Message[]
+
+  @@map("users")
+}
+
+// ─── LISTINGS ─────────────────────────────────────────────────────────────────
+model Listing {
+  id          String        @id @default(cuid())
+  type        ListingType
+  title       String
+  slug        String        @unique
+  description String
+  price       Decimal       @db.Decimal(14, 2)
+  location    String
+  city        String
+  status      ListingStatus @default(pending)
+  images      String[]      @default([])
+  viewCount   Int           @default(0) @map("view_count")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  userId      String?       @map("user_id")
+  user        User?         @relation(fields: [userId], references: [id])
+  poster      Poster?
+  carDetails  CarDetail?
+  houseDetails HouseDetail?
+  contacts    Contact[]
+  conversations Conversation[]
+
+  @@index([type])
+  @@index([status])
+  @@index([city])
+  @@index([createdAt])
+  @@index([userId])
+  @@map("listings")
+}
+
+// ─── POSTER (private contact info — never exposed to public) ─────────────────
+model Poster {
+  id        String   @id @default(cuid())
+  fullName  String   @map("full_name")
+  phone     String
+  email     String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  listingId String  @unique @map("listing_id")
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@map("posters")
+}
+
+// ─── CAR DETAILS ──────────────────────────────────────────────────────────────
+model CarDetail {
+  id           String      @id @default(cuid())
+  make         String
+  model        String
+  year         Int
+  mileage      Int
+  transmission Transmission
+  fuelType     FuelType    @map("fuel_type")
+  color        String
+  engineSize   String?     @map("engine_size")
+
+  listingId String  @unique @map("listing_id")
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@map("car_details")
+}
+
+// ─── HOUSE DETAILS ────────────────────────────────────────────────────────────
+model HouseDetail {
+  id           String       @id @default(cuid())
+  propertyType PropertyType @map("property_type")
+  saleType     SaleType     @map("sale_type")
+  bedrooms     Int          @default(0)
+  bathrooms    Int          @default(1)
+  areaSqm      Decimal      @map("area_sqm") @db.Decimal(10, 2)
+  floor        Int?
+  furnished    Boolean      @default(false)
+
+  listingId String  @unique @map("listing_id")
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@map("house_details")
+}
+
+// ─── CONTACTS (customer inquiries — routed to sales team) ────────────────────
+model Contact {
+  id         String        @id @default(cuid())
+  name       String
+  phone      String
+  email      String?
+  message    String
+  status     ContactStatus @default(unread)
+  assignedTo String?       @map("assigned_to")
+  createdAt  DateTime      @default(now()) @map("created_at")
+  updatedAt  DateTime      @updatedAt @map("updated_at")
+
+  listingId String  @map("listing_id")
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("contacts")
+}
+
+// ─── CHAT (between admin/sales and listing client) ────────────────────────────
+model Conversation {
+  id        String   @id @default(cuid())
+  listingId String   @map("listing_id")
+  clientId  String   @map("client_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  client    User     @relation("ClientConversations", fields: [clientId], references: [id], onDelete: Cascade)
+  messages  Message[]
+
+  @@unique([listingId, clientId])
+  @@map("conversations")
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  content        String
+  senderId       String       @map("sender_id")
+  conversationId String       @map("conversation_id")
+  isRead         Boolean      @default(false) @map("is_read")
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  sender       User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([createdAt])
+  @@map("messages")
+}
+
+// ─── ENUMS ────────────────────────────────────────────────────────────────────
+enum UserRole {
+  admin
+  sales
+  client
+}
+
+enum ListingType {
+  car
+  house
+}
+
+enum ListingStatus {
+  pending
+  active
+  sold
+  rented
+}
+
+enum Transmission {
+  automatic
+  manual
+}
+
+enum FuelType {
+  petrol
+  diesel
+  electric
+  hybrid
+}
+
+enum PropertyType {
+  villa
+  apartment
+  house
+  studio
+  commercial
+}
+
+enum SaleType {
+  for_sale
+  for_rent
+}
+
+enum ContactStatus {
+  unread
+  read
+  replied
+}
