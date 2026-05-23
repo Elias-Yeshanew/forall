@@ -23,7 +23,7 @@ export default function UsersPage() {
 
 function UsersContent() {
   const [modalOpen, setModalOpen] = useState(false)
-  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'sales' as const })
+  const [form, setForm] = useState<{ name: string; email: string; password: string; role: 'sales' | 'admin' }>({ name: '', email: '', password: '', role: 'sales' })
   const qc = useQueryClient()
 
   const { data: users, isLoading } = useQuery({
