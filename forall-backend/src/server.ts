@@ -43,6 +43,7 @@ async function startServer() {
     server.listen(env.PORT, () => {
       console.log(`\n🚀 Forall API running`)
       console.log(`   Environment : ${env.NODE_ENV}`)
+      console.log(`   Database    : ${env.DATABASE_URL.replace(/:[^:@]+@/, ':***@')}`)
       console.log(`   Port        : ${env.PORT}`)
       console.log(`   Health      : http://localhost:${env.PORT}/health`)
       console.log(`   API Base    : http://localhost:${env.PORT}/api\n`)

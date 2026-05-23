@@ -45,7 +45,13 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')))
 
 // ─── Health check ─────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', service: 'forall-api', env: env.NODE_ENV })
+  const dbHost = env.DATABASE_URL.split('@')[1]?.split('/')[0] || 'unknown'
+  res.json({ 
+    status: 'ok', 
+    service: 'forall-api', 
+    env: env.NODE_ENV,
+    database_host: dbHost 
+  })
 })
 
 app.get('/api', (_req, res) => {
