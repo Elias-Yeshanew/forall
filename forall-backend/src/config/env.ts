@@ -56,6 +56,6 @@ export const env = {
   TWILIO_PHONE_NUMBER: optional('TWILIO_PHONE_NUMBER', ''),
   SALES_PHONE: optional('SALES_PHONE', ''),
 
-  CLIENT_URL: optional('CLIENT_URL', 'http://localhost:3000'),
+  CLIENT_URL: optional('CLIENT_URL', 'https://forall-beige.vercel.app/'),
   BCRYPT_ROUNDS: parseInt(optional('BCRYPT_ROUNDS', '12')),
 }
