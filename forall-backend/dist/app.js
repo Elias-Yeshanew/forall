@@ -18,6 +18,7 @@ const auth_routes_1 = __importDefault(require("./routes/auth.routes"));
 const listing_routes_1 = __importDefault(require("./routes/listing.routes"));
 const contact_routes_1 = __importDefault(require("./routes/contact.routes"));
 const user_routes_1 = __importDefault(require("./routes/user.routes"));
+const chat_routes_1 = __importDefault(require("./routes/chat.routes"));
 const app = (0, express_1.default)();
 // ─── Security ────────────────────────────────────────────────────────────────
 app.use((0, helmet_1.default)({
@@ -26,7 +27,7 @@ app.use((0, helmet_1.default)({
     crossOriginResourcePolicy: { policy: 'cross-origin' },
 }));
 app.use((0, cors_1.default)({
-    origin: env_1.env.CLIENT_URL,
+    origin: env_1.env.IS_PROD ? env_1.env.CLIENT_URL : true,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
@@ -41,7 +42,13 @@ app.use(rateLimiter_1.defaultLimiter);
 app.use('/uploads', express_1.default.static(path_1.default.join(process.cwd(), 'uploads')));
 // ─── Health check ─────────────────────────────────────────────────────────────
 app.get('/health', (_req, res) => {
-    res.json({ status: 'ok', service: 'forall-api', env: env_1.env.NODE_ENV });
+    const dbHost = env_1.env.DATABASE_URL.split('@')[1]?.split('/')[0] || 'unknown';
+    res.json({
+        status: 'ok',
+        service: 'forall-api',
+        env: env_1.env.NODE_ENV,
+        database_host: dbHost
+    });
 });
 app.get('/api', (_req, res) => {
     res.json({
@@ -78,6 +85,12 @@ app.get('/api', (_req, res) => {
                 'PUT /api/users/:id',
                 'DELETE /api/users/:id',
             ],
+            chat: [
+                'GET /api/chat/conversations',
+                'POST /api/chat/conversations',
+                'GET /api/chat/conversations/:id/messages',
+                'POST /api/chat/conversations/:id/messages',
+            ]
         },
     });
 });
@@ -86,6 +99,7 @@ app.use('/api/auth', auth_routes_1.default);
 app.use('/api/listings', listing_routes_1.default);
 app.use('/api/contacts', contact_routes_1.default);
 app.use('/api/users', user_routes_1.default);
+app.use('/api/chat', chat_routes_1.default);
 // ─── Error handling ───────────────────────────────────────────────────────────
 app.use(errorHandler_1.notFound);
 app.use(errorHandler_1.errorHandler);

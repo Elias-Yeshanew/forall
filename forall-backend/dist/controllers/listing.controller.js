@@ -42,7 +42,7 @@ async function getListingById(req, res, next) {
 }
 async function createListing(req, res, next) {
     try {
-        const listing = await (0, listing_service_1.createListingService)(req.body);
+        const listing = await (0, listing_service_1.createListingService)(req.body, req.user.id);
         res.status(201).json({ status: 'success', data: { listing } });
     }
     catch (err) {

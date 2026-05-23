@@ -1,10 +1,25 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.register = register;
 exports.login = login;
 exports.refresh = refresh;
 exports.logout = logout;
 exports.getMe = getMe;
 const auth_service_1 = require("../services/auth.service");
+async function register(req, res, next) {
+    try {
+        const { name, email, password, phone } = req.body;
+        const { user, tokens } = await (0, auth_service_1.registerService)(name, email, password, phone);
+        res.cookie('refreshToken', tokens.refreshToken, {
+            httpOnly: true, secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict', maxAge: 30 * 24 * 60 * 60 * 1000,
+        });
+        res.status(201).json({ status: 'success', data: { user, token: tokens.accessToken } });
+    }
+    catch (err) {
+        next(err);
+    }
+}
 async function login(req, res, next) {
     try {
         const { email, password } = req.body;

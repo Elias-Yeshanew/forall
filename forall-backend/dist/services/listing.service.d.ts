@@ -1,58 +1,61 @@
 import { Prisma } from '@prisma/client';
 import { CreateListingDto, UpdateListingDto, ListingFilters } from '../types/listing';
-export declare function getListingsService(filters: ListingFilters): Promise<import("../utils/pagination").PaginatedResult<{
-    poster: {
-        email: string | null;
+export declare function getListingsService(filters: ListingFilters): Promise<{
+    data: {
+        poster: {
+            email: string | null;
+            id: string;
+            phone: string;
+            createdAt: Date;
+            fullName: string;
+            listingId: string;
+        } | null;
         id: string;
         createdAt: Date;
-        fullName: string;
-        phone: string;
-        listingId: string;
-    } | null;
-    id: string;
-    createdAt: Date;
-    updatedAt: Date;
-    type: import(".prisma/client").$Enums.ListingType;
-    status: import(".prisma/client").$Enums.ListingStatus;
-    slug: string;
-    title: string;
-    description: string;
-    price: Prisma.Decimal;
-    location: string;
-    city: string;
-    images: string[];
-    viewCount: number;
-    carDetails: {
-        model: string;
-        year: number;
-        id: string;
-        listingId: string;
-        make: string;
-        mileage: number;
-        transmission: import(".prisma/client").$Enums.Transmission;
-        fuelType: import(".prisma/client").$Enums.FuelType;
-        color: string;
-        engineSize: string | null;
-    } | null;
-    houseDetails: {
-        id: string;
-        listingId: string;
-        propertyType: import(".prisma/client").$Enums.PropertyType;
-        saleType: import(".prisma/client").$Enums.SaleType;
-        bedrooms: number;
-        bathrooms: number;
-        areaSqm: Prisma.Decimal;
-        floor: number | null;
-        furnished: boolean;
-    } | null;
-}>>;
+        updatedAt: Date;
+        type: import(".prisma/client").$Enums.ListingType;
+        status: import(".prisma/client").$Enums.ListingStatus;
+        slug: string;
+        title: string;
+        description: string;
+        price: Prisma.Decimal;
+        location: string;
+        city: string;
+        images: string[];
+        viewCount: number;
+        carDetails: {
+            model: string;
+            year: number;
+            id: string;
+            listingId: string;
+            make: string;
+            mileage: number;
+            transmission: import(".prisma/client").$Enums.Transmission;
+            fuelType: import(".prisma/client").$Enums.FuelType;
+            color: string;
+            engineSize: string | null;
+        } | null;
+        houseDetails: {
+            id: string;
+            listingId: string;
+            propertyType: import(".prisma/client").$Enums.PropertyType;
+            saleType: import(".prisma/client").$Enums.SaleType;
+            bedrooms: number;
+            bathrooms: number;
+            areaSqm: Prisma.Decimal;
+            floor: number | null;
+            furnished: boolean;
+        } | null;
+    }[];
+    total: number;
+}>;
 export declare function getListingsAdminService(filters: ListingFilters): Promise<import("../utils/pagination").PaginatedResult<{
     poster: {
         email: string | null;
         id: string;
+        phone: string;
         createdAt: Date;
         fullName: string;
-        phone: string;
         listingId: string;
     } | null;
     id: string;
@@ -96,9 +99,9 @@ export declare function getListingByIdService(id: string): Promise<{
     poster: {
         email: string | null;
         id: string;
+        phone: string;
         createdAt: Date;
         fullName: string;
-        phone: string;
         listingId: string;
     } | null;
     id: string;
@@ -141,18 +144,18 @@ export declare function getListingByIdService(id: string): Promise<{
 export declare function getPosterDetailsService(listingId: string): Promise<{
     email: string | null;
     id: string;
+    phone: string;
     createdAt: Date;
     fullName: string;
-    phone: string;
     listingId: string;
 }>;
-export declare function createListingService(dto: CreateListingDto): Promise<{
+export declare function createListingService(dto: CreateListingDto, userId: string): Promise<{
     poster: {
         email: string | null;
         id: string;
+        phone: string;
         createdAt: Date;
         fullName: string;
-        phone: string;
         listingId: string;
     } | null;
     id: string;
@@ -196,9 +199,9 @@ export declare function updateListingService(id: string, dto: UpdateListingDto):
     poster: {
         email: string | null;
         id: string;
+        phone: string;
         createdAt: Date;
         fullName: string;
-        phone: string;
         listingId: string;
     } | null;
     id: string;
@@ -242,9 +245,9 @@ export declare function updateListingStatusService(id: string, status: string): 
     poster: {
         email: string | null;
         id: string;
+        phone: string;
         createdAt: Date;
         fullName: string;
-        phone: string;
         listingId: string;
     } | null;
     id: string;

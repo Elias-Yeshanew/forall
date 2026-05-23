@@ -15,10 +15,10 @@ export declare function createContactService(dto: CreateContactDto): Promise<{
     email: string | null;
     name: string;
     id: string;
+    phone: string;
     createdAt: Date;
     updatedAt: Date;
     status: import(".prisma/client").$Enums.ContactStatus;
-    phone: string;
     listingId: string;
     assignedTo: string | null;
 }>;
@@ -38,10 +38,10 @@ export declare function getContactsService(params: {
         email: string | null;
         name: string;
         id: string;
+        phone: string;
         createdAt: Date;
         updatedAt: Date;
         status: import(".prisma/client").$Enums.ContactStatus;
-        phone: string;
         listingId: string;
         assignedTo: string | null;
     })[];
@@ -62,10 +62,10 @@ export declare function updateContactService(id: string, dto: {
     email: string | null;
     name: string;
     id: string;
+    phone: string;
     createdAt: Date;
     updatedAt: Date;
     status: import(".prisma/client").$Enums.ContactStatus;
-    phone: string;
     listingId: string;
     assignedTo: string | null;
 }>;

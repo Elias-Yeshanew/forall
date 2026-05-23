@@ -12,6 +12,14 @@ const loginSchema = zod_1.z.object({
     email: zod_1.z.string().email(),
     password: zod_1.z.string().min(6),
 });
+const registerSchema = zod_1.z.object({
+    name: zod_1.z.string().min(2),
+    email: zod_1.z.string().email(),
+    password: zod_1.z.string().min(6),
+    phone: zod_1.z.string().optional(),
+});
+// POST /api/auth/register
+router.post('/register', rateLimiter_1.authLimiter, (0, validate_1.validate)(registerSchema), auth_controller_1.register);
 // POST /api/auth/login
 router.post('/login', rateLimiter_1.authLimiter, (0, validate_1.validate)(loginSchema), auth_controller_1.login);
 // POST /api/auth/refresh

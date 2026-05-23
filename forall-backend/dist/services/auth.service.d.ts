@@ -1,4 +1,8 @@
 import { SafeUser, TokenPair } from '../types/auth';
+export declare function registerService(name: string, email: string, password: string, phone?: string): Promise<{
+    user: SafeUser;
+    tokens: TokenPair;
+}>;
 export declare function loginService(email: string, password: string): Promise<{
     user: SafeUser;
     tokens: TokenPair;

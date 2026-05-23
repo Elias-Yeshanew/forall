@@ -60,7 +60,8 @@ async function getListingsService(filters) {
         database_1.prisma.listing.findMany({ where, skip, take: limit, orderBy: { createdAt: 'desc' }, select: PUBLIC_SELECT }),
         database_1.prisma.listing.count({ where }),
     ]);
-    return (0, pagination_1.buildPaginatedResult)(data, total, page, limit);
+    // return buildPaginatedResult(data, total, page, limit)
+    return { data, total };
 }
 // ─── STAFF: listings WITH poster info ───────────────────────────────────────
 async function getListingsAdminService(filters) {
@@ -89,10 +90,11 @@ async function getPosterDetailsService(listingId) {
     return poster;
 }
 // ─── PUBLIC: create listing ──────────────────────────────────────────────────
-async function createListingService(dto) {
+async function createListingService(dto, userId) {
     const slug = await (0, slugify_1.generateUniqueSlug)(dto.title);
     const listing = await database_1.prisma.listing.create({
         data: {
+            userId,
             type: dto.type,
             title: dto.title,
             slug,
@@ -102,7 +104,7 @@ async function createListingService(dto) {
             city: dto.city,
             images: dto.images ?? [],
             status: 'pending', // always starts as pending for review
-            poster: { create: dto.poster },
+            ...(dto.poster && { poster: { create: dto.poster } }),
             ...(dto.carDetails && { carDetails: { create: dto.carDetails } }),
             ...(dto.houseDetails && { houseDetails: { create: dto.houseDetails } }),
         },

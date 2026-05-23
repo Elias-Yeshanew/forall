@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.registerService = registerService;
 exports.loginService = loginService;
 exports.refreshTokenService = refreshTokenService;
 exports.getMeService = getMeService;
@@ -13,6 +14,24 @@ const errorHandler_1 = require("../middleware/errorHandler");
 const jwt_1 = require("../utils/jwt");
 function toSafeUser(user) {
     return { id: user.id, name: user.name, email: user.email, role: user.role, createdAt: user.createdAt };
+}
+async function registerService(name, email, password, phone) {
+    const existingUser = await database_1.prisma.user.findUnique({ where: { email: email.toLowerCase().trim() } });
+    if (existingUser) {
+        throw new errorHandler_1.AppError('Email is already registered', 400);
+    }
+    const passwordHash = await bcryptjs_1.default.hash(password, 10);
+    const user = await database_1.prisma.user.create({
+        data: {
+            name,
+            email: email.toLowerCase().trim(),
+            passwordHash,
+            phone,
+            role: 'client'
+        }
+    });
+    const tokens = (0, jwt_1.generateTokenPair)(user);
+    return { user: toSafeUser(user), tokens };
 }
 async function loginService(email, password) {
     const user = await database_1.prisma.user.findUnique({ where: { email: email.toLowerCase().trim() } });

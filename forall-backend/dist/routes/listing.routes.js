@@ -23,7 +23,7 @@ const createSchema = zod_1.z.object({
         fullName: zod_1.z.string().min(2),
         phone: zod_1.z.string().min(9).regex(/^\+?[0-9\s\-()]+$/),
         email: zod_1.z.string().email().optional().or(zod_1.z.literal('')),
-    }),
+    }).optional(),
     carDetails: zod_1.z.object({
         make: zod_1.z.string().min(1),
         model: zod_1.z.string().min(1),
@@ -59,10 +59,10 @@ router.get('/admin', auth_middleware_1.authenticate, roleGuard_1.staffOnly, list
 router.get('/:id/poster', auth_middleware_1.authenticate, roleGuard_1.staffOnly, listing_controller_1.getPosterDetails);
 // GET  /api/listings/:id         — single listing (no poster info)
 router.get('/:id', listing_controller_1.getListingById);
-// POST /api/listings             — submit new listing (anyone can post)
-router.post('/', rateLimiter_1.postLimiter, (0, validate_1.validate)(createSchema), listing_controller_1.createListing);
-// POST /api/listings/upload      — upload images (anyone submitting a listing)
-router.post('/upload', rateLimiter_1.postLimiter, upload_middleware_1.upload.array('images', 8), listing_controller_1.uploadListingImages);
+// POST /api/listings             — submit new listing (must be logged in)
+router.post('/', auth_middleware_1.authenticate, rateLimiter_1.postLimiter, (0, validate_1.validate)(createSchema), listing_controller_1.createListing);
+// POST /api/listings/upload      — upload images
+router.post('/upload', auth_middleware_1.authenticate, rateLimiter_1.postLimiter, upload_middleware_1.upload.array('images', 8), listing_controller_1.uploadListingImages);
 // PUT  /api/listings/:id         — update listing
 router.put('/:id', auth_middleware_1.authenticate, roleGuard_1.staffOnly, listing_controller_1.updateListing);
 // PATCH /api/listings/:id/status — change status (approve/reject)

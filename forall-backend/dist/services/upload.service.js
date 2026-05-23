@@ -26,14 +26,14 @@ async function uploadImages(files, title) {
         return [];
     if (env_1.env.STORAGE_PROVIDER === 'local') {
         const titleSlug = toSafeSlug(title);
-        const uploadsDir = path_1.default.join(process.cwd(), 'uploads', 'listings', titleSlug);
+        const uploadsDir = path_1.default.join(process.cwd(), 'uploads', 'listings');
         await fs_1.promises.mkdir(uploadsDir, { recursive: true });
         const urls = await Promise.all(files.map(async (file, index) => {
             const ext = path_1.default.extname(file.originalname) || '.jpg';
             const name = `${titleSlug}-${Date.now()}-${index + 1}-${crypto_1.default.randomBytes(4).toString('hex')}${ext}`;
             const targetPath = path_1.default.join(uploadsDir, name);
             await fs_1.promises.writeFile(targetPath, file.buffer);
-            return `${env_1.env.API_BASE_URL}/uploads/listings/${titleSlug}/${name}`;
+            return `${env_1.env.API_BASE_URL}/uploads/listings/${name}`;
         }));
         return urls;
     }

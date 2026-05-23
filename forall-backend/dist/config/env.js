@@ -17,11 +17,20 @@ function optional(key, fallback) {
     return process.env[key] ?? fallback;
 }
 const defaultPort = optional('PORT', '5000');
+const isProd = process.env.NODE_ENV === 'production';
+const dbUrl = isProd
+    ? (process.env.DATABASE_URL_PROD || process.env.DATABASE_URL)
+    : (process.env.DATABASE_URL_DEV || process.env.DATABASE_URL);
+if (!dbUrl) {
+    throw new Error(`Missing database URL (DATABASE_URL_${isProd ? 'PROD' : 'DEV'} or DATABASE_URL)`);
+}
+// Override process.env.DATABASE_URL for Prisma Client compatibility
+process.env.DATABASE_URL = dbUrl;
 exports.env = {
     NODE_ENV: optional('NODE_ENV', 'development'),
     PORT: parseInt(defaultPort),
-    IS_PROD: process.env.NODE_ENV === 'production',
-    DATABASE_URL: required('DATABASE_URL'),
+    IS_PROD: isProd,
+    DATABASE_URL: dbUrl,
     JWT_SECRET: required('JWT_SECRET'),
     JWT_EXPIRES_IN: optional('JWT_EXPIRES_IN', '1d'),
     JWT_REFRESH_SECRET: required('JWT_REFRESH_SECRET'),
