@@ -9,6 +9,13 @@ export async function getConversations(req: Request, res: Response, next: NextFu
     let whereClause = {}
     if (user.role === 'client') {
       whereClause = { clientId: user.id }
+    } else if (user.role === 'sales') {
+      whereClause = {
+        OR: [
+          { assignedSalesId: null },
+          { assignedSalesId: user.id }
+        ]
+      }
     }
 
     const conversations = await prisma.conversation.findMany({
@@ -16,6 +23,7 @@ export async function getConversations(req: Request, res: Response, next: NextFu
       include: {
         listing: { select: { id: true, title: true, images: true } },
         client: { select: { id: true, name: true, email: true } },
+        assignedSales: { select: { id: true, name: true, email: true } },
         messages: {
           orderBy: { createdAt: 'desc' },
           take: 1
@@ -76,14 +84,36 @@ export async function sendMessage(req: Request, res: Response, next: NextFunctio
       }
     })
 
-    await prisma.conversation.update({
-      where: { id },
-      data: { updatedAt: new Date() }
-    })
+    let assignedSalesId = conversation.assignedSalesId
+    if (req.user!.role === 'sales' && !assignedSalesId) {
+      await prisma.conversation.update({
+        where: { id },
+        data: {
+          assignedSalesId: req.user!.id,
+          updatedAt: new Date()
+        }
+      })
+      assignedSalesId = req.user!.id
+    } else {
+      await prisma.conversation.update({
+        where: { id },
+        data: { updatedAt: new Date() }
+      })
+    }
 
-    // Store in global so socket can access it
+    // Emit socket updates real-time
     if ((global as any).io) {
-      (global as any).io.to(`conversation_${id}`).emit('receive_message', message)
+      const io = (global as any).io
+      io.to(`conversation_${id}`).emit('receive_message', message)
+
+      if (assignedSalesId) {
+        io.to(`user_${assignedSalesId}`).emit('conversation_updated', { conversationId: id })
+        io.to(`user_${conversation.clientId}`).emit('conversation_updated', { conversationId: id })
+        io.to('role_sales').emit('conversation_updated', { conversationId: id })
+      } else {
+        io.to('role_sales').emit('conversation_updated', { conversationId: id })
+        io.to(`user_${conversation.clientId}`).emit('conversation_updated', { conversationId: id })
+      }
     }
 
     res.status(201).json({ status: 'success', data: message })

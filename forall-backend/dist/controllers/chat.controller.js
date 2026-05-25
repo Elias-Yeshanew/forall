@@ -13,11 +13,20 @@ async function getConversations(req, res, next) {
         if (user.role === 'client') {
             whereClause = { clientId: user.id };
         }
+        else if (user.role === 'sales') {
+            whereClause = {
+                OR: [
+                    { assignedSalesId: null },
+                    { assignedSalesId: user.id }
+                ]
+            };
+        }
         const conversations = await database_1.prisma.conversation.findMany({
             where: whereClause,
             include: {
                 listing: { select: { id: true, title: true, images: true } },
                 client: { select: { id: true, name: true, email: true } },
+                assignedSales: { select: { id: true, name: true, email: true } },
                 messages: {
                     orderBy: { createdAt: 'desc' },
                     take: 1
@@ -75,13 +84,36 @@ async function sendMessage(req, res, next) {
                 senderId: req.user.id
             }
         });
-        await database_1.prisma.conversation.update({
-            where: { id },
-            data: { updatedAt: new Date() }
-        });
-        // Store in global so socket can access it
+        let assignedSalesId = conversation.assignedSalesId;
+        if (req.user.role === 'sales' && !assignedSalesId) {
+            await database_1.prisma.conversation.update({
+                where: { id },
+                data: {
+                    assignedSalesId: req.user.id,
+                    updatedAt: new Date()
+                }
+            });
+            assignedSalesId = req.user.id;
+        }
+        else {
+            await database_1.prisma.conversation.update({
+                where: { id },
+                data: { updatedAt: new Date() }
+            });
+        }
+        // Emit socket updates real-time
         if (global.io) {
-            global.io.to(`conversation_${id}`).emit('receive_message', message);
+            const io = global.io;
+            io.to(`conversation_${id}`).emit('receive_message', message);
+            if (assignedSalesId) {
+                io.to(`user_${assignedSalesId}`).emit('conversation_updated', { conversationId: id });
+                io.to(`user_${conversation.clientId}`).emit('conversation_updated', { conversationId: id });
+                io.to('role_sales').emit('conversation_updated', { conversationId: id });
+            }
+            else {
+                io.to('role_sales').emit('conversation_updated', { conversationId: id });
+                io.to(`user_${conversation.clientId}`).emit('conversation_updated', { conversationId: id });
+            }
         }
         res.status(201).json({ status: 'success', data: message });
     }

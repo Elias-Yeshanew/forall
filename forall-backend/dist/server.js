@@ -25,6 +25,16 @@ async function startServer() {
         global.io = io;
         io.on('connection', (socket) => {
             console.log('Socket client connected:', socket.id);
+            socket.on('setup_user', ({ userId, role }) => {
+                if (userId) {
+                    socket.join(`user_${userId}`);
+                    console.log(`Socket ${socket.id} joined user_${userId}`);
+                }
+                if (role) {
+                    socket.join(`role_${role}`);
+                    console.log(`Socket ${socket.id} joined role_${role}`);
+                }
+            });
             socket.on('join_conversation', (conversationId) => {
                 socket.join(`conversation_${conversationId}`);
                 console.log(`Socket ${socket.id} joined conversation_${conversationId}`);

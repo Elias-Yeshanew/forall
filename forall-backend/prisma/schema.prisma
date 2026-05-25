@@ -23,6 +23,7 @@ model User {
 
   listings     Listing[]
   conversations Conversation[] @relation("ClientConversations")
+  assignedConversations Conversation[] @relation("SalesConversations")
   messages     Message[]
 
   @@map("users")
@@ -141,6 +142,9 @@ model Conversation {
   listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
   client    User     @relation("ClientConversations", fields: [clientId], references: [id], onDelete: Cascade)
   messages  Message[]
+
+  assignedSalesId String?      @map("assigned_sales_id")
+  assignedSales   User?        @relation("SalesConversations", fields: [assignedSalesId], references: [id], onDelete: SetNull)
 
   @@unique([listingId, clientId])
   @@map("conversations")
