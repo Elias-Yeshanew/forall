@@ -1,7 +1,7 @@
 'use client'
 // src/app/(public)/listings/[id]/page.tsx
 import { useState } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
 import { Badge } from '@/components/ui/Badge'
@@ -10,18 +10,40 @@ import { ContactModal } from '@/components/forms/ContactModal'
 import { useListing } from '@/hooks/useListings'
 import { useAuth } from '@/context/AuthContext'
 import { formatPrice, formatDate } from '@/lib/utils'
-import { MapPin, Calendar, Gauge, BedDouble, Maximize2, Phone, Mail, Loader2, ArrowLeft } from 'lucide-react'
+import { MapPin, Calendar, Gauge, BedDouble, Maximize2, Phone, Mail, Loader2, ArrowLeft, MessageSquare } from 'lucide-react'
 import Link from 'next/link'
 import { useTranslation } from 'react-i18next'
+import { chatApi } from '@/lib/api'
+import toast from 'react-hot-toast'
 
 export default function ListingDetailPage() {
   const { t } = useTranslation(['listingDetail', 'common', 'listing'])
   const { id } = useParams<{ id: string }>()
+  const router = useRouter()
   const { data: listing, isLoading } = useListing(id)
   const { user } = useAuth()
   const isStaff = user?.role === 'admin' || user?.role === 'sales'
   const [contactOpen, setContactOpen] = useState(false)
   const [activeImage, setActiveImage] = useState(0)
+  const [chatLoading, setChatLoading] = useState(false)
+
+  const handleChatNow = async () => {
+    if (!user) {
+      toast.error(t('common:loginRequired', 'Please log in to start a chat'))
+      router.push('/login')
+      return
+    }
+    
+    try {
+      setChatLoading(true)
+      const conv = await chatApi.startConversation(listing!.id)
+      router.push(`/chat?convId=${conv.id}`)
+    } catch {
+      toast.error(t('common:chatError', 'Failed to start conversation'))
+    } finally {
+      setChatLoading(false)
+    }
+  }
 
   if (isLoading) {
     return (
@@ -149,16 +171,25 @@ export default function ListingDetailPage() {
               <div className="text-xs text-[#8A8070] mb-1">{t('listingDetail:listedOn', 'Listed on')}</div>
               <div className="text-sm text-[#C8C0B0] mb-6">{formatDate(listing.createdAt)}</div>
 
-              {/* Public: contact sales */}
+              {/* Public: contact sales or chat directly */}
               {!isStaff && (
-                <>
-                  <div className="bg-[#111] rounded-lg p-4 mb-4 text-xs text-[#8A8070] border border-[#C9A84C]/10">
-                    {t('listingDetail:interested', 'Interested? Contact our sales team and we\'ll connect you with the seller.')}
+                <div className="flex flex-col gap-3">
+                  <div className="bg-[#111] rounded-lg p-4 text-xs text-[#8A8070] border border-[#C9A84C]/10">
+                    {t('listingDetail:interested', 'Interested? Contact our sales team or chat directly with an agent.')}
                   </div>
-                  <Button onClick={() => setContactOpen(true)} className="w-full">
-                    {t('listings:contactSales', 'Contact Sales Team')}
+                  <Button onClick={handleChatNow} loading={chatLoading} className="w-full flex items-center justify-center gap-2">
+                    <MessageSquare className="w-4 h-4" />
+                    {t('listings:chatNow', 'Chat with an Agent')}
                   </Button>
-                </>
+                  <div className="relative flex py-1 items-center">
+                    <div className="flex-grow border-t border-[#C9A84C]/10"></div>
+                    <span className="flex-shrink mx-3 text-[10px] text-[#8A8070] uppercase tracking-[1px]">{t('common:or', 'or')}</span>
+                    <div className="flex-grow border-t border-[#C9A84C]/10"></div>
+                  </div>
+                  <Button onClick={() => setContactOpen(true)} variant="outline" className="w-full">
+                    {t('listings:contactSales', 'Submit Inquiry Form')}
+                  </Button>
+                </div>
               )}
 
               {/* Staff: show poster details */}

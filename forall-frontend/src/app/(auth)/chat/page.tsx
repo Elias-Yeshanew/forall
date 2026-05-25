@@ -1,6 +1,6 @@
 'use client'
 // src/app/(auth)/chat/page.tsx
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, Suspense } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { chatApi } from '@/lib/api'
 import { io, Socket } from 'socket.io-client'
@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import toast from 'react-hot-toast'
 import { Navbar } from '@/components/layout/Navbar'
+import { useSearchParams } from 'next/navigation'
 
 interface Conversation {
   id: string
@@ -25,8 +26,11 @@ interface Message {
   createdAt: string
 }
 
-export default function ChatPage() {
+function ChatContent() {
   const { user, isAuthenticated, isLoading } = useAuth()
+  const searchParams = useSearchParams()
+  const convId = searchParams.get('convId')
+
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [activeConv, setActiveConv] = useState<Conversation | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
@@ -56,6 +60,15 @@ export default function ChatPage() {
       return () => { newSocket.disconnect() }
     }
   }, [isLoading, isAuthenticated, user])
+
+  useEffect(() => {
+    if (convId && conversations.length > 0) {
+      const target = conversations.find((c) => c.id === convId)
+      if (target) {
+        setActiveConv(target)
+      }
+    }
+  }, [convId, conversations])
 
   useEffect(() => {
     if (activeConv && socket) {
@@ -197,5 +210,13 @@ export default function ChatPage() {
 
       </div>
     </div>
+  )
+}
+
+export default function ChatPage() {
+  return (
+    <Suspense fallback={null}>
+      <ChatContent />
+    </Suspense>
   )
 }
