@@ -14,6 +14,7 @@ interface Conversation {
   id: string
   listing: { id: string; title: string; images: string[] }
   client: { id: string; name: string }
+  assignedSales?: { id: string; name: string } | null
   messages: Message[]
 }
 
@@ -34,14 +35,27 @@ export default function ChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated) {
-      chatApi.getConversations().then(setConversations).catch(() => toast.error('Failed to load chats'))
+    if (!isLoading && isAuthenticated && user) {
+      const fetchConversations = () => {
+        chatApi.getConversations().then(setConversations).catch(() => toast.error('Failed to load chats'))
+      }
+
+      fetchConversations()
       
       const newSocket = io(process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000')
+      
+      newSocket.on('connect', () => {
+        newSocket.emit('setup_user', { userId: user.id, role: user.role })
+      })
+
+      newSocket.on('conversation_updated', () => {
+        fetchConversations()
+      })
+
       setSocket(newSocket)
       return () => { newSocket.disconnect() }
     }
-  }, [isLoading, isAuthenticated])
+  }, [isLoading, isAuthenticated, user])
 
   useEffect(() => {
     if (activeConv && socket) {
@@ -104,8 +118,17 @@ export default function ChatPage() {
                 <img src={c.listing.images[0] || '/placeholder.png'} className="w-10 h-10 rounded object-cover" />
                 <div className="flex-1 overflow-hidden">
                   <div className="text-sm font-medium text-[#F5F0E8] truncate">{c.listing.title}</div>
-                  <div className="text-xs text-[#8A8070] truncate">
-                    {user?.role === 'client' ? 'Staff' : c.client.name}
+                  <div className="flex items-center justify-between gap-2 mt-0.5">
+                    <span className="text-xs text-[#8A8070] truncate">
+                      {user?.role === 'client' 
+                        ? (c.assignedSales ? `Agent: ${c.assignedSales.name}` : 'Broker (Assigned to all sales)') 
+                        : `Client: ${c.client.name}`}
+                    </span>
+                    {!c.assignedSales && user?.role === 'sales' && (
+                      <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        New Inq
+                      </span>
+                    )}
                   </div>
                 </div>
               </button>
@@ -117,14 +140,23 @@ export default function ChatPage() {
         <div className="flex-1 border border-[#C9A84C]/20 rounded-xl bg-[#1A1A1A] flex flex-col overflow-hidden">
           {activeConv ? (
             <>
-              <div className="p-4 border-b border-[#C9A84C]/15 flex items-center gap-3">
-                <img src={activeConv.listing.images[0] || '/placeholder.png'} className="w-10 h-10 rounded object-cover" />
-                <div>
-                  <div className="text-sm font-medium text-[#F5F0E8]">{activeConv.listing.title}</div>
-                  <div className="text-xs text-[#8A8070]">
-                    Chatting with {user?.role === 'client' ? 'Staff' : activeConv.client.name}
+              <div className="p-4 border-b border-[#C9A84C]/15 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <img src={activeConv.listing.images[0] || '/placeholder.png'} className="w-10 h-10 rounded object-cover" />
+                  <div>
+                    <div className="text-sm font-medium text-[#F5F0E8]">{activeConv.listing.title}</div>
+                    <div className="text-xs text-[#8A8070]">
+                      {user?.role === 'client' 
+                        ? (activeConv.assignedSales ? `Assigned Agent: ${activeConv.assignedSales.name}` : 'Awaiting Sales Representative response...') 
+                        : `Chatting with client: ${activeConv.client.name}`}
+                    </div>
                   </div>
                 </div>
+                {!activeConv.assignedSales && user?.role === 'sales' && (
+                  <span className="text-xs px-2.5 py-1 rounded bg-[#C9A84C]/15 text-[#C9A84C] border border-[#C9A84C]/30 animate-pulse font-medium">
+                    Reply to Claim Conversation
+                  </span>
+                )}
               </div>
               
               <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
