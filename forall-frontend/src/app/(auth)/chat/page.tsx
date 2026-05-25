@@ -26,11 +26,8 @@ interface Message {
   createdAt: string
 }
 
-function ChatContent() {
+export default function ChatPage() {
   const { user, isAuthenticated, isLoading } = useAuth()
-  const searchParams = useSearchParams()
-  const convId = searchParams.get('convId')
-
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [activeConv, setActiveConv] = useState<Conversation | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
@@ -45,9 +42,9 @@ function ChatContent() {
       }
 
       fetchConversations()
-      
+
       const newSocket = io(process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000')
-      
+
       newSocket.on('connect', () => {
         newSocket.emit('setup_user', { userId: user.id, role: user.role })
       })
@@ -60,15 +57,6 @@ function ChatContent() {
       return () => { newSocket.disconnect() }
     }
   }, [isLoading, isAuthenticated, user])
-
-  useEffect(() => {
-    if (convId && conversations.length > 0) {
-      const target = conversations.find((c) => c.id === convId)
-      if (target) {
-        setActiveConv(target)
-      }
-    }
-  }, [convId, conversations])
 
   useEffect(() => {
     if (activeConv && socket) {
@@ -110,7 +98,7 @@ function ChatContent() {
     <div className="h-screen flex flex-col bg-[#0A0A0A]">
       <Navbar />
       <div className="flex-1 overflow-hidden flex max-w-7xl w-full mx-auto p-4 gap-4">
-        
+
         {/* Sidebar */}
         <div className="w-1/3 border border-[#C9A84C]/20 rounded-xl bg-[#1A1A1A] flex flex-col overflow-hidden">
           <div className="p-4 border-b border-[#C9A84C]/15 font-['Playfair_Display'] text-lg text-[#F5F0E8]">
@@ -124,17 +112,16 @@ function ChatContent() {
               <button
                 key={c.id}
                 onClick={() => setActiveConv(c)}
-                className={`p-3 rounded-lg text-left transition-colors flex items-center gap-3 ${
-                  activeConv?.id === c.id ? 'bg-[#C9A84C]/15 border border-[#C9A84C]/30' : 'hover:bg-[#111] border border-transparent'
-                }`}
+                className={`p-3 rounded-lg text-left transition-colors flex items-center gap-3 ${activeConv?.id === c.id ? 'bg-[#C9A84C]/15 border border-[#C9A84C]/30' : 'hover:bg-[#111] border border-transparent'
+                  }`}
               >
                 <img src={c.listing.images[0] || '/placeholder.png'} className="w-10 h-10 rounded object-cover" />
                 <div className="flex-1 overflow-hidden">
                   <div className="text-sm font-medium text-[#F5F0E8] truncate">{c.listing.title}</div>
                   <div className="flex items-center justify-between gap-2 mt-0.5">
                     <span className="text-xs text-[#8A8070] truncate">
-                      {user?.role === 'client' 
-                        ? (c.assignedSales ? `Agent: ${c.assignedSales.name}` : 'Broker (Assigned to all sales)') 
+                      {user?.role === 'client'
+                        ? (c.assignedSales ? `Agent: ${c.assignedSales.name}` : 'Broker (Assigned to all sales)')
                         : `Client: ${c.client.name}`}
                     </span>
                     {!c.assignedSales && user?.role === 'sales' && (
@@ -159,8 +146,8 @@ function ChatContent() {
                   <div>
                     <div className="text-sm font-medium text-[#F5F0E8]">{activeConv.listing.title}</div>
                     <div className="text-xs text-[#8A8070]">
-                      {user?.role === 'client' 
-                        ? (activeConv.assignedSales ? `Assigned Agent: ${activeConv.assignedSales.name}` : 'Awaiting Sales Representative response...') 
+                      {user?.role === 'client'
+                        ? (activeConv.assignedSales ? `Assigned Agent: ${activeConv.assignedSales.name}` : 'Awaiting Sales Representative response...')
                         : `Chatting with client: ${activeConv.client.name}`}
                     </div>
                   </div>
@@ -171,15 +158,14 @@ function ChatContent() {
                   </span>
                 )}
               </div>
-              
+
               <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
                 {messages.map((msg) => {
                   const isMine = msg.senderId === user?.id
                   return (
                     <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[70%] p-3 rounded-xl text-sm ${
-                        isMine ? 'bg-[#C9A84C] text-[#0A0A0A] rounded-tr-none' : 'bg-[#111] text-[#C8C0B0] border border-[#C9A84C]/20 rounded-tl-none'
-                      }`}>
+                      <div className={`max-w-[70%] p-3 rounded-xl text-sm ${isMine ? 'bg-[#C9A84C] text-[#0A0A0A] rounded-tr-none' : 'bg-[#111] text-[#C8C0B0] border border-[#C9A84C]/20 rounded-tl-none'
+                        }`}>
                         {msg.content}
                       </div>
                     </div>
@@ -189,10 +175,10 @@ function ChatContent() {
               </div>
 
               <form onSubmit={handleSend} className="p-4 border-t border-[#C9A84C]/15 flex gap-2">
-                <Input 
-                  value={input} 
-                  onChange={(e) => setInput(e.target.value)} 
-                  placeholder="Type a message..." 
+                <Input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="Type a message..."
                   className="flex-1"
                 />
                 <Button type="submit" size="icon" disabled={!input.trim()}>
@@ -210,13 +196,5 @@ function ChatContent() {
 
       </div>
     </div>
-  )
-}
-
-export default function ChatPage() {
-  return (
-    <Suspense fallback={null}>
-      <ChatContent />
-    </Suspense>
   )
 }
