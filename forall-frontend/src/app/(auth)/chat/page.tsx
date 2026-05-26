@@ -1,6 +1,6 @@
 'use client'
 // src/app/(auth)/chat/page.tsx
-import { useEffect, useState, useRef, Suspense } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useAuth } from '@/context/AuthContext'
 import { chatApi } from '@/lib/api'
 import { io, Socket } from 'socket.io-client'
@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import toast from 'react-hot-toast'
 import { Navbar } from '@/components/layout/Navbar'
-import { useSearchParams } from 'next/navigation'
+import { RoleGuard } from '@/components/layout/RoleGuard'
 
 interface Conversation {
   id: string
@@ -26,7 +26,7 @@ interface Message {
   createdAt: string
 }
 
-export default function ChatPage() {
+function ChatContent() {
   const { user, isAuthenticated, isLoading } = useAuth()
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [activeConv, setActiveConv] = useState<Conversation | null>(null)
@@ -57,6 +57,19 @@ export default function ChatPage() {
       return () => { newSocket.disconnect() }
     }
   }, [isLoading, isAuthenticated, user])
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && conversations.length > 0) {
+      const params = new URLSearchParams(window.location.search)
+      const convId = params.get('convId')
+      if (convId) {
+        const target = conversations.find((c) => c.id === convId)
+        if (target) {
+          setActiveConv(target)
+        }
+      }
+    }
+  }, [conversations])
 
   useEffect(() => {
     if (activeConv && socket) {
@@ -91,8 +104,6 @@ export default function ChatPage() {
       toast.error('Failed to send message')
     }
   }
-
-  if (isLoading || !isAuthenticated) return null
 
   return (
     <div className="h-screen flex flex-col bg-[#0A0A0A]">
@@ -162,11 +173,20 @@ export default function ChatPage() {
               <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
                 {messages.map((msg) => {
                   const isMine = msg.senderId === user?.id
+                  const senderName = isMine 
+                    ? 'You' 
+                    : (msg.senderId === activeConv.client.id 
+                        ? activeConv.client.name 
+                        : (activeConv.assignedSales?.name || 'Agent'))
+
                   return (
                     <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[70%] p-3 rounded-xl text-sm ${isMine ? 'bg-[#C9A84C] text-[#0A0A0A] rounded-tr-none' : 'bg-[#111] text-[#C8C0B0] border border-[#C9A84C]/20 rounded-tl-none'
-                        }`}>
-                        {msg.content}
+                      <div className={`flex flex-col ${isMine ? 'items-end' : 'items-start'} max-w-[70%]`}>
+                        <span className="text-[10px] text-[#8A8070] mb-0.5 px-1">{senderName}</span>
+                        <div className={`p-3 rounded-xl text-sm w-full ${isMine ? 'bg-[#C9A84C] text-[#0A0A0A] rounded-tr-none' : 'bg-[#111] text-[#C8C0B0] border border-[#C9A84C]/20 rounded-tl-none'
+                          }`}>
+                          {msg.content}
+                        </div>
                       </div>
                     </div>
                   )
@@ -196,5 +216,13 @@ export default function ChatPage() {
 
       </div>
     </div>
+  )
+}
+
+export default function ChatPage() {
+  return (
+    <RoleGuard allowedRoles={['admin', 'sales', 'client']}>
+      <ChatContent />
+    </RoleGuard>
   )
 }
