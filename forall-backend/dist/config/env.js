@@ -50,7 +50,7 @@ exports.env = {
     TWILIO_AUTH_TOKEN: optional('TWILIO_AUTH_TOKEN', ''),
     TWILIO_PHONE_NUMBER: optional('TWILIO_PHONE_NUMBER', ''),
     SALES_PHONE: optional('SALES_PHONE', ''),
-    CLIENT_URL: optional('CLIENT_URL', 'https://forall-beige.vercel.app'),
+    CLIENT_URL: optional('CLIENT_URL', 'http://localhost:3000'),
     BCRYPT_ROUNDS: parseInt(optional('BCRYPT_ROUNDS', '12')),
 };
 //# sourceMappingURL=env.js.map

@@ -57,8 +57,7 @@ export async function getListingsService(filters: ListingFilters) {
     prisma.listing.count({ where }),
   ])
 
-  // return buildPaginatedResult(data, total, page, limit)
-  return { data, total }
+  return buildPaginatedResult(data, total, page, limit)
 }
 
 // ─── STAFF: listings WITH poster info ───────────────────────────────────────
