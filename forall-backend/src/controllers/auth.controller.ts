@@ -1,6 +1,6 @@
 // src/controllers/auth.controller.ts
 import { Request, Response, NextFunction } from 'express'
-import { loginService, refreshTokenService, getMeService, registerService } from '../services/auth.service'
+import { loginService, refreshTokenService, getMeService, registerService, googleLoginService } from '../services/auth.service'
 
 export async function register(req: Request, res: Response, next: NextFunction) {
   try {
@@ -57,5 +57,23 @@ export async function getMe(req: Request, res: Response, next: NextFunction) {
   try {
     const user = await getMeService(req.user!.id)
     res.json({ status: 'success', data: { user } })
+  } catch (err) { next(err) }
+}
+
+export async function googleLogin(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { idToken } = req.body
+    if (!idToken) {
+      return res.status(400).json({ status: 'error', message: 'Google ID token is required' })
+    }
+
+    const { user, tokens } = await googleLoginService(idToken)
+
+    res.cookie('refreshToken', tokens.refreshToken, {
+      httpOnly: true, secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict', maxAge: 30 * 24 * 60 * 60 * 1000,
+    })
+
+    res.json({ status: 'success', data: { user, token: tokens.accessToken } })
   } catch (err) { next(err) }
 }

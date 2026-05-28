@@ -56,6 +56,8 @@ export const env = {
   TWILIO_PHONE_NUMBER: optional('TWILIO_PHONE_NUMBER', ''),
   SALES_PHONE: optional('SALES_PHONE', ''),
 
+  GOOGLE_CLIENT_ID: optional('GOOGLE_CLIENT_ID', ''),
+
   CLIENT_URL: optional('CLIENT_URL', 'http://localhost:3000').replace(/\/$/, ''),
   BCRYPT_ROUNDS: parseInt(optional('BCRYPT_ROUNDS', '12')),
 }

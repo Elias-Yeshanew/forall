@@ -1,6 +1,6 @@
 // src/routes/auth.routes.ts
 import { Router } from 'express'
-import { login, logout, refresh, getMe, register } from '../controllers/auth.controller'
+import { login, logout, refresh, getMe, register, googleLogin } from '../controllers/auth.controller'
 import { authenticate } from '../middleware/auth.middleware'
 import { validate } from '../middleware/validate'
 import { authLimiter } from '../middleware/rateLimiter'
@@ -25,6 +25,9 @@ router.post('/register', authLimiter, validate(registerSchema), register)
 
 // POST /api/auth/login
 router.post('/login', authLimiter, validate(loginSchema), login)
+
+// POST /api/auth/google
+router.post('/google', authLimiter, googleLogin)
 
 // POST /api/auth/refresh
 router.post('/refresh', refresh)
