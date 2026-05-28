@@ -96,10 +96,8 @@ function ChatContent() {
     e.preventDefault()
     if (!input.trim() || !activeConv) return
     try {
-      const newMsg = await chatApi.sendMessage(activeConv.id, input)
+      await chatApi.sendMessage(activeConv.id, input)
       setInput('')
-      // Message is appended via socket event, but we can optimistically append it
-      // setMessages(prev => [...prev, newMsg])
     } catch {
       toast.error('Failed to send message')
     }

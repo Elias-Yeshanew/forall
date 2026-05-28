@@ -71,6 +71,11 @@ export const authApi = {
     const res = await apiClient.post<ApiEnvelope<{ token: string }>>('/auth/refresh')
     return { token: res.data.data.token }
   },
+
+  loginWithGoogle: async (idToken: string): Promise<LoginResponse> => {
+    const res = await apiClient.post<ApiEnvelope<{ user: User; token: string }>>('/auth/google', { idToken })
+    return res.data.data
+  },
 }
 
 // ─── LISTINGS ───────────────────────────────────────────────────────────────

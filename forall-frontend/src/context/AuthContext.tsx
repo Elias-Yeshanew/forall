@@ -7,6 +7,7 @@ import { tokenStorage, userStorage } from '@/lib/auth'
 
 interface AuthContextValue extends AuthState {
   login: (email: string, password: string) => Promise<void>
+  loginWithGoogle: (idToken: string) => Promise<void>
   register: (data: any) => Promise<void>
   logout: () => Promise<void>
   refreshUser: () => Promise<void>
@@ -56,6 +57,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setState({ user, token, isAuthenticated: true, isLoading: false })
   }, [])
 
+  const loginWithGoogle = useCallback(async (idToken: string) => {
+    const { user, token } = await authApi.loginWithGoogle(idToken)
+    tokenStorage.set(token)
+    userStorage.set(user)
+    setState({ user, token, isAuthenticated: true, isLoading: false })
+  }, [])
+
   const register = useCallback(async (data: any) => {
     const { user, token } = await authApi.register(data)
     tokenStorage.set(token)
@@ -72,7 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   return (
-    <AuthContext.Provider value={{ ...state, login, register, logout, refreshUser }}>
+    <AuthContext.Provider value={{ ...state, login, loginWithGoogle, register, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   )

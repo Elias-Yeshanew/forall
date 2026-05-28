@@ -1,5 +1,6 @@
 'use client'
 // src/app/(auth)/login/page.tsx
+import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { loginSchema, LoginFormData } from '@/lib/validations'
@@ -11,10 +12,11 @@ import { ShieldCheck } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
 import { useTranslation } from 'react-i18next'
+import Script from 'next/script'
 
 export default function LoginPage() {
   const { t } = useTranslation('auth')
-  const { login } = useAuth()
+  const { login, loginWithGoogle } = useAuth()
   const router = useRouter()
 
   const {
@@ -32,6 +34,47 @@ export default function LoginPage() {
       toast.error('Invalid email or password.')
     }
   }
+
+  const initGoogle = () => {
+    try {
+      const google = (window as any).google;
+      if (google) {
+        google.accounts.id.initialize({
+          client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '',
+          callback: async (response: any) => {
+            try {
+              if (response.credential) {
+                await loginWithGoogle(response.credential)
+                toast.success('Welcome back!')
+                router.replace('/dashboard')
+              }
+            } catch (err: any) {
+              console.error('Google login failed:', err)
+              toast.error(err.response?.data?.message || 'Google authentication failed.')
+            }
+          },
+        });
+        google.accounts.id.renderButton(
+          document.getElementById('google-signin-button'),
+          {
+            theme: 'filled_black',
+            size: 'large',
+            width: 320,
+            text: 'signin_with',
+            shape: 'rectangular',
+          }
+        );
+      }
+    } catch (e) {
+      console.error('Error initializing Google Sign-In:', e);
+    }
+  };
+
+  useEffect(() => {
+    if ((window as any).google) {
+      initGoogle();
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center px-4">
@@ -71,6 +114,27 @@ export default function LoginPage() {
               {t('loginBtn', 'Sign In')}
             </Button>
           </form>
+
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-[#C9A84C]/15" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-[#1A1A1A] px-2 text-[#8A8070]">
+                {t('orContinueWith', 'Or continue with')}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex justify-center">
+            <div id="google-signin-button" className="w-full min-h-[40px] flex justify-center"></div>
+          </div>
+
+          <Script
+            src="https://accounts.google.com/gsi/client"
+            strategy="lazyOnload"
+            onLoad={initGoogle}
+          />
         </div>
 
         <p className="text-center text-xs text-[#8A8070] mt-6 flex flex-col gap-2">
